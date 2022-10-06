@@ -1,7 +1,7 @@
 # <<: !include ../secrets.yaml
 
 esphome:
-  name: energy_monitor
+  name: energy-monitor
   platform: ESP32
   board: mhetesp32devkit
   includes:
@@ -37,6 +37,8 @@ api:
 ota:
   password: !secret ota_password
 
+esp32_ble_tracker:
+
 sensor:
   - platform: custom
     lambda: |-
@@ -51,8 +53,40 @@ sensor:
         unit_of_measurement: A
         accuracy_decimals: 2
       - name: "Power Sensor"
+        id: my_power
         unit_of_measurement: W
         accuracy_decimals: 0
+        device_class: power
+        state_class: measurement
+  - platform: total_daily_energy
+    name: "Total Daily Energy"
+    power_id: my_power
+    filters:
+      # Multiplication factor from W to kW is 0.001
+      - multiply: 0.001
+    unit_of_measurement: kW
+  - platform: xiaomi_lywsdcgq
+    mac_address: "4C:65:A8:DC:29:97"
+    temperature:
+      name: "beed room temperature"
+      filters:
+        - median:
+            window_size: 5
+            send_every: 5
+            send_first_at: 1
+    humidity:
+      name: "beed room humidity"
+      filters:
+        - delta: 0.2
+    battery_level:
+      name: "beed room battery"
+      filters:
+        - delta: 0.1
 
+# Enable time component to reset energy at midnight
+time:
+  - platform: sntp
+    id: my_time
+    
 # web_server:
 #   port: 80
